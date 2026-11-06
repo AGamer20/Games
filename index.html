@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games</title>
+<style>
+:root{--bg:#14161b;--tile:#1f232b;--edge:#2d323d;--text:#e8e6e1;--muted:#8a8f9c;--glow:#ffc83d}
+@media (prefers-color-scheme:light){:root{--bg:#f2f0eb;--tile:#fff;--edge:#d9d5cc;--text:#1d1f24;--muted:#6b6f7a;--glow:#d98f00}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--text);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  display:flex;flex-direction:column;align-items:center;padding:56px 20px 32px;min-height:100vh}
+h1{font-size:clamp(1.8rem,5vw,2.8rem);margin:0 0 40px;letter-spacing:.02em;font-weight:700}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,140px));gap:28px;justify-content:center;width:100%;max-width:760px}
+.game{position:relative;display:block;aspect-ratio:1;border-radius:28px;background:var(--tile);border:2px solid var(--edge);
+  display:grid;place-items:center;padding:18px;text-decoration:none;color:var(--text);
+  transition:transform .15s,border-color .15s,box-shadow .15s}
+.game:hover,.game:focus-visible{transform:translateY(-6px) scale(1.04);border-color:var(--glow);
+  box-shadow:0 0 28px color-mix(in srgb,var(--glow) 45%,transparent);outline:none}
+.game img{width:100%;height:100%;object-fit:contain;border-radius:12px}
+.game .fallback{font-size:3rem;font-weight:700;color:var(--glow)}
+.game::after{content:attr(data-name);position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;font-size:.85rem;color:var(--muted);opacity:0;transition:opacity .15s;pointer-events:none}
+.game:hover::after,.game:focus-visible::after{opacity:1}
+footer{margin-top:auto;padding-top:48px;font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.game{transition:none}}
+</style>
+</head>
+<body>
+<h1>Games</h1>
+<main id="grid" aria-label="Games"></main>
+<footer id="note"></footer>
+
+<script>
+// To add a game: put its folder next to this file and add its folder name here.
+const GAMES = ["Lights-On", "Math-Rush", "Techno-Seek"];
+
+const grid = document.getElementById("grid");
+
+function tile(name) {
+  const a = document.createElement("a");
+  const label = name.replace(/-/g, " ");
+  a.className = "game";
+  a.href = encodeURIComponent(name) + "/";
+  a.dataset.name = label;
+  a.setAttribute("aria-label", label);
+  grid.appendChild(a);
+  return a;
+}
+
+function showFallback(a, name) {
+  a.innerHTML = "";
+  const s = document.createElement("span");
+  s.className = "fallback";
+  s.textContent = name[0].toUpperCase();
+  a.appendChild(s);
+}
+
+// Reads the game's own index.html and uses the icon from its <link rel="icon"> tab icon.
+async function loadIcon(name, a) {
+  const base = new URL(encodeURIComponent(name) + "/", location.href);
+  let iconUrl = new URL("favicon.ico", base).href;
+  try {
+    const res = await fetch(new URL("index.html", base));
+    if (!res.ok) throw new Error(res.status);
+    const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+    const link = doc.querySelector('link[rel~="icon" i]') || doc.querySelector('link[rel~="shortcut" i]');
+    if (link && link.getAttribute("href")) iconUrl = new URL(link.getAttribute("href"), base).href;
+    const title = doc.querySelector("title");
+    if (title && title.textContent.trim()) {
+      a.dataset.name = title.textContent.trim();
+      a.setAttribute("aria-label", a.dataset.name);
+    }
+  } catch (e) {
+    if (location.protocol === "file:") {
+      document.getElementById("note").textContent =
+        "Open this page through a web server or GitHub Pages so game icons can load.";
+    }
+  }
+  const img = new Image();
+  img.alt = "";
+  img.onerror = () => showFallback(a, name);
+  img.src = iconUrl;
+  a.appendChild(img);
+}
+
+GAMES.forEach(name => loadIcon(name, tile(name)));
+</script>
+</body>
+</html>
