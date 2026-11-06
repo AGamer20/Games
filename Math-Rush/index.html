@@ -83,6 +83,13 @@
         p { color: #ddd; margin: 0; font-size: 1.5em; }
         #credits { font-size: 1em; color: var(--chalk-blue); opacity: 0.8; margin-top: 20px; }
 
+        .btn.back-btn {
+            position: fixed; top: 10px; left: 10px; z-index: 20;
+            width: auto; max-width: none; padding: 5px 12px; border-width: 1px;
+            font-size: 1em; font-weight: 400; direction: ltr; text-decoration: none;
+        }
+        .back-btn::before { content: "\2190"; margin-right: 6px; }
+
         #lang-reset-container { display: flex; gap: 10px; width: 100%; max-width: 320px; font-size: clamp(0.5rem, 7vw, 0.7rem);}
         #lang-reset-container .btn { width: 100%; }
         body.rtl #lang-reset-container { flex-direction: row-reverse; }
@@ -211,6 +218,7 @@
 <body>
     <div id="game-container">
         <div id="main-menu-screen" class="screen">
+            <a id="back-to-hub-btn" class="btn btn-secondary back-btn" href="../" data-i18n="more">More</a>
             <h1 data-i18n="mainMenuTitle">Math Rush</h1>
             <p data-i18n="mainMenuSubtitle">Test your calculation speed and accuracy!</p>
             <button id="goto-level-select-btn" class="btn" data-i18n="selectLevel">Select Level</button>
@@ -494,10 +502,10 @@
 
     const i18n = {
         en: {
-            mainMenuTitle: "Math Rush", mainMenuSubtitle: "Test your calculation speed and accuracy!", selectLevel: "Select Level", switchLanguage: "العربية", resetProgress: "Reset Progress", campaignLevels: "Campaign Levels", extraLevels: "Extra Levels", begin: "Begin", continue: "Continue to Next Level", tryAgain: "Try Again", backToLevels: "Back to Levels", mainMenu: "Main Menu", level: "Level", retry: "Retry", completed: "Completed", questions: "Questions", goal: "Answer {passMark} correctly to pass!", goalRetry: "Answer ALL {numQuestions} correctly to advance!", levelMastered: "Level Mastered!", wellDone: "Well Done!", keepTrying: "Keep Trying!", runResult: "You answered {score} out of {total} correctly this run.", totalProgress: "Total Progress: {progress} / {total}"
+            mainMenuTitle: "Math Rush", more: "More", mainMenuSubtitle: "Test your calculation speed and accuracy!", selectLevel: "Select Level", switchLanguage: "العربية", resetProgress: "Reset Progress", campaignLevels: "Campaign Levels", extraLevels: "Extra Levels", begin: "Begin", continue: "Continue to Next Level", tryAgain: "Try Again", backToLevels: "Back to Levels", mainMenu: "Main Menu", level: "Level", retry: "Retry", completed: "Completed", questions: "Questions", goal: "Answer {passMark} correctly to pass!", goalRetry: "Answer ALL {numQuestions} correctly to advance!", levelMastered: "Level Mastered!", wellDone: "Well Done!", keepTrying: "Keep Trying!", runResult: "You answered {score} out of {total} correctly this run.", totalProgress: "Total Progress: {progress} / {total}"
         },
         ar: {
-            mainMenuSubtitle: "اختبر سرعتك ودقتك في الحساب!", selectLevel: "اختر مرحلة", switchLanguage: "English", resetProgress: "إعادة تعيين التقدم", campaignLevels: "المراحل الأساسية", extraLevels: "مراحل إضافية", begin: "ابدأ", continue: "المتابعة للمرحلة التالية", tryAgain: "حاول مرة أخرى", backToLevels: "العودة إلى المراحل", mainMenu: "القائمة الرئيسية", level: "مرحلة", retry: "إعادة", completed: "اكتمل", questions: "أسئلة", goal: "أجب على {passMark} بشكل صحيح للنجاح!", goalRetry: "أجب على كل الأسئلة ({numQuestions}) بشكل صحيح للتقدم!", levelMastered: "أتقنت المرحلة!", wellDone: "أحسنت!", keepTrying: "واصل المحاولة!", runResult: "لقد أجبت على {score} من {total} بشكل صحيح هذه المرة.", totalProgress: "التقدم الإجمالي: {progress} / {total}"
+            more: "المزيد", mainMenuSubtitle: "اختبر سرعتك ودقتك في الحساب!", selectLevel: "اختر مرحلة", switchLanguage: "English", resetProgress: "إعادة تعيين التقدم", campaignLevels: "المراحل الأساسية", extraLevels: "مراحل إضافية", begin: "ابدأ", continue: "المتابعة للمرحلة التالية", tryAgain: "حاول مرة أخرى", backToLevels: "العودة إلى المراحل", mainMenu: "القائمة الرئيسية", level: "مرحلة", retry: "إعادة", completed: "اكتمل", questions: "أسئلة", goal: "أجب على {passMark} بشكل صحيح للنجاح!", goalRetry: "أجب على كل الأسئلة ({numQuestions}) بشكل صحيح للتقدم!", levelMastered: "أتقنت المرحلة!", wellDone: "أحسنت!", keepTrying: "واصل المحاولة!", runResult: "لقد أجبت على {score} من {total} بشكل صحيح هذه المرة.", totalProgress: "التقدم الإجمالي: {progress} / {total}"
         }
     };
 
