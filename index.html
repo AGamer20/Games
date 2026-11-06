@@ -13,7 +13,9 @@ html,body{margin:0;min-height:100%}
 body{background:var(--bg);color:var(--text);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
   display:flex;flex-direction:column;align-items:center;padding:56px 20px 32px;min-height:100vh}
 h1{font-size:clamp(1.8rem,5vw,2.8rem);margin:0 0 40px;letter-spacing:.02em;font-weight:700}
-#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,140px));gap:28px;justify-content:center;width:100%;max-width:760px}
+#grid{display:flex;flex-direction:column;align-items:center;gap:44px;width:100%}
+.row{display:flex;justify-content:center;gap:28px;flex-wrap:nowrap}
+.row .game{width:clamp(84px,26vw,140px)}
 .game{position:relative;display:block;aspect-ratio:1;border-radius:28px;background:var(--tile);border:2px solid var(--edge);
   display:grid;place-items:center;padding:18px;text-decoration:none;color:var(--text);
   transition:transform .15s,border-color .15s,box-shadow .15s}
@@ -34,19 +36,30 @@ footer{margin-top:auto;padding-top:48px;font-size:.8rem;color:var(--muted)}
 <footer id="note"></footer>
 
 <script>
-// To add a game: put its folder next to this file and add its folder name here.
-const GAMES = ["Lights-On", "Math-Rush", "Techno-Seek"];
+// Each inner list is one row. A slot is either { folder } (icon read from that game's tab icon)
+// or { name, letter, href } (letter placeholder with a custom link).
+const ROWS = [
+  [
+    { name: "Coming Soon", letter: "P", href: "#" },
+    { name: "Hifz Al-Dhikr", letter: "H", href: "https://agamer20.github.io/Games/Hifz-Al-Dhikr/" }
+  ],
+  [
+    { folder: "Lights-On" },
+    { folder: "Math-Rush" },
+    { folder: "Techno-Seek" }
+  ]
+];
 
 const grid = document.getElementById("grid");
 
-function tile(name) {
+function tile(row, name, href) {
   const a = document.createElement("a");
   const label = name.replace(/-/g, " ");
   a.className = "game";
-  a.href = encodeURIComponent(name) + "/";
+  a.href = href;
   a.dataset.name = label;
   a.setAttribute("aria-label", label);
-  grid.appendChild(a);
+  row.appendChild(a);
   return a;
 }
 
@@ -86,7 +99,18 @@ async function loadIcon(name, a) {
   a.appendChild(img);
 }
 
-GAMES.forEach(name => loadIcon(name, tile(name)));
+ROWS.forEach(slots => {
+  const row = document.createElement("div");
+  row.className = "row";
+  grid.appendChild(row);
+  slots.forEach(slot => {
+    if (slot.folder) {
+      loadIcon(slot.folder, tile(row, slot.folder, encodeURIComponent(slot.folder) + "/"));
+    } else {
+      showFallback(tile(row, slot.name, slot.href), slot.letter);
+    }
+  });
+});
 </script>
 </body>
 </html>
