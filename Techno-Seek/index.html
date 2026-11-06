@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Techno Seek</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="Techno-Seek-Logo.png">
@@ -21,7 +22,8 @@
             color: #fff;
             text-align: center;
             font-family: 'unixel', sans-serif;
-            overflow: hidden; /* Prevents scrollbars */
+            overflow-x: hidden;
+            padding-bottom: 70px; /* keeps the controls clear of the language button */
         }
         h1, p, button, #k {
             font-family: 'unixel', sans-serif;
@@ -34,6 +36,7 @@
         canvas {
             border: 1px solid #fff;
         }
+        .controls-container { direction: ltr; } /* keep the d-pad layout the same in Arabic */
         .controls-container table {
             margin: 10px auto;
             border-spacing: 3px;
@@ -106,16 +109,16 @@
             cursor: pointer;
         }
     </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BXY45FPPST"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-BXY45FPPST');
+    </script>
 </head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BXY45FPPST"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-BXY45FPPST');
-</script>
 <body dir="ltr"> <!-- Start with LTR direction -->
     <div id="game-container">
         <canvas id="c" width="200" height="200"></canvas>
@@ -134,6 +137,7 @@
                     <td><button id="up" 
                         onmousedown="handleButtonPress(0, -1, 'ArrowUp', event)" onmouseup="handleButtonRelease('ArrowUp')" onmouseleave="handleButtonRelease('ArrowUp')"
                         ontouchstart="handleButtonPress(0, -1, 'ArrowUp', event)" ontouchend="handleButtonRelease('ArrowUp')"
+                        ontouchcancel="handleButtonRelease('ArrowUp')"
                         data-lang-key="move_up">↑</button></td>
                     <td></td>
                 </tr>
@@ -141,14 +145,17 @@
                     <td><button id="left" 
                         onmousedown="handleButtonPress(-1, 0, 'ArrowLeft', event)" onmouseup="handleButtonRelease('ArrowLeft')" onmouseleave="handleButtonRelease('ArrowLeft')"
                         ontouchstart="handleButtonPress(-1, 0, 'ArrowLeft', event)" ontouchend="handleButtonRelease('ArrowLeft')"
+                        ontouchcancel="handleButtonRelease('ArrowLeft')"
                         data-lang-key="move_left">←</button></td>
                     <td><button id="down" 
                         onmousedown="handleButtonPress(0, 1, 'ArrowDown', event)" onmouseup="handleButtonRelease('ArrowDown')" onmouseleave="handleButtonRelease('ArrowDown')"
                         ontouchstart="handleButtonPress(0, 1, 'ArrowDown', event)" ontouchend="handleButtonRelease('ArrowDown')"
+                        ontouchcancel="handleButtonRelease('ArrowDown')"
                         data-lang-key="move_down">↓</button></td>
                     <td><button id="right" 
                         onmousedown="handleButtonPress(1, 0, 'ArrowRight', event)" onmouseup="handleButtonRelease('ArrowRight')" onmouseleave="handleButtonRelease('ArrowRight')"
                         ontouchstart="handleButtonPress(1, 0, 'ArrowRight', event)" ontouchend="handleButtonRelease('ArrowRight')"
+                        ontouchcancel="handleButtonRelease('ArrowRight')"
                         data-lang-key="move_right">→</button></td>
                 </tr>
                 <tr>
@@ -265,6 +272,9 @@
 
             // Update the toggle button's text
             document.getElementById('lang-toggle-btn').innerText = translations[lang].toggle_lang;
+
+            // Keep an open riddle in sync with the chosen language
+            if (isRiddleActive) riddleText.innerText = translations[lang]['riddle_' + currentRoom];
         }
 
         function toggleLanguage() {
@@ -287,6 +297,19 @@
         let isKeyPressed = {};
         let isRiddleActive = false;
         let canMove = true;
+
+        function releaseAllKeys() {
+            Object.values(keyPressTimers).forEach(clearTimeout);
+            keysDown = {};
+            isKeyPressed = {};
+        }
+        window.addEventListener('blur', releaseAllKeys);
+
+        function resetGame() {
+            currentRoom = 1; playerX = 1; playerY = 10; keysPicked = {};
+            updateKeyButton();
+            draw();
+        }
 
         const riddles = { 1: {}, 4: {}, 7: {}, 13: {} };
         const mapConnections = {
@@ -472,7 +495,7 @@
             if (conn.special === 'room5to9') {
                 const isUsingRegularDoor = playerY >= 12 && playerY < 14;
                 if (!isUsingRegularDoor && conn.key && !keysPicked[conn.key]) {
-                    keysDown = {};
+                    releaseAllKeys();
                     alert(translations[currentLanguage].locked_door);
                     bounceBack(direction);
                     return;
@@ -480,15 +503,16 @@
             } else if (conn.special === 'room9to5') {
                  // No key check needed
             } else if (conn.key && !keysPicked[conn.key]) {
-                keysDown = {};
+                releaseAllKeys();
                 alert(translations[currentLanguage].locked_door);
                 bounceBack(direction);
                 return;
             }
 
             if (conn.to === null) {
-                keysDown = {};
+                releaseAllKeys();
                 alert(translations[currentLanguage].you_win);
+                resetGame();
                 return;
             }
 
@@ -519,16 +543,25 @@
             isRiddleActive = false;
         }
 
+        function normalizeAnswer(s) {
+            let a = String(s).trim().toLowerCase()
+                .replace(/[\u0660-\u0669]/g, d => d.charCodeAt(0) - 0x660)   // Arabic digits -> 0-9
+                .replace(/[\u064B-\u0652\u0640]/g, '')                       // diacritics, tatweel
+                .replace(/\s+/g, '');
+            if (a.startsWith('ال') && a.length > 3) a = a.slice(2);            // "الماء" -> "ماء"
+            return a;
+        }
+
         function checkRiddleAnswer() {
             const explanationKey = 'explanation_' + currentRoom;
-            const userAnswer = riddleInput.value.trim().toLowerCase();
+            const userAnswer = normalizeAnswer(riddleInput.value);
 
             // Get the correct answer for both English and Arabic
             const englishAnswer = translations.en['answer_' + currentRoom];
             const arabicAnswer = translations.ar['answer_' + currentRoom];
 
             // Check if the user's answer matches either language's correct answer
-            if (userAnswer === englishAnswer || userAnswer === arabicAnswer) {
+            if (userAnswer === normalizeAnswer(englishAnswer) || userAnswer === normalizeAnswer(arabicAnswer)) {
                 alert(translations[currentLanguage][explanationKey]);
                 keysPicked[currentRoom] = true;
                 hideRiddle();
