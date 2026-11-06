@@ -1,616 +1,575 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lights On</title>
-    <link rel="icon" type="image/png" href="Lights-On-Logo.png">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
-        @font-face {
-          font-family: 'Glowtone';
-            src: url('glowtone.otf') format('opentype');
-        }
-
-        :root {
-            --bg-color: #121212;
-            --grid-bg: #1d1d1d;
-            --cell-off: #333;
-            --cell-on: #ffd700;
-            --text-color: #f0f0f0;
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --extra-color: #ff8c00;
-            --perfect-color: #28a745;
-            --shadow-color: rgba(255, 215, 0, 0.5);
-        }
-
-        body {
-            font-family: 'Poppins', 'sans-serif';
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        body.rtl {
-            direction: rtl;
-        }
-
-        .screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0; left: 0;
-            opacity: 1;
-            transition: opacity 0.3s ease-in-out;
-            z-index: 1;
-        }
-        
-        .screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        h1 {
-            font-family: 'Glowtone';
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.6), 0 0 10px rgba(255, 255, 255, 0.4);
-            direction: ltr;
-        }
-
-        h1 span {
-            position: relative;
-            z-index: 1;
-        }
-
-        h1 svg {
-            height: 1.6em;
-            margin-left: -15px;
-            padding-bottom: 15px;
-            transform: rotate(35deg);
-            position: relative;
-            z-index: 0;
-            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
-        }
-
-        h2 { text-align: center; }
-
-        .button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 24px;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin: 10px;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-        .button.timed-button {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important; 
-        }
-        .button:hover { transform: scale(1.05); }
-        .button.secondary { background-color: var(--secondary-color); }
-        .button.secondary:hover { background-color: #5a6268; }
-        .button.dev-button { background-color: var(--extra-color); }
-        .button.dev-button:hover { background-color: #e67e00; }
-
-        #info-bar { display: flex; justify-content: space-between; width: 90vmin; max-width: 500px; font-size: 1.2em; font-weight: 600; }
-        #grid-container {
-            display: grid;
-            gap: 10px;
-            background-color: var(--grid-bg);
-            padding: 15px;
-            border-radius: 12px;
-            width: 90vmin;
-            height: 90vmin;
-            max-width: 500px;
-            max-height: 500px;
-            margin: 20px 0;
-            transition: grid-template-columns 0.3s ease;
-            direction: ltr;
-        }
-        .cell {
-            background-color: var(--cell-off); border-radius: 8px; cursor: pointer;
-            transition: transform 0.1s ease-out, background-color 0.2s ease;
-        }
-        .cell:active { transform: scale(0.95); }
-        .cell.on { background-color: var(--cell-on); box-shadow: 0 0 20px var(--shadow-color); }
-        #controls { display: flex; flex-wrap: wrap; justify-content: center; }
-
-        #level-select-screen .levels-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: clamp(8px, 2vw, 15px);
-            padding: 0 10px;
-            width: 95%;
-            max-width: 500px;
-            box-sizing: border-box;
-        }
-        .level-button {
-            font-weight: 600;
-            padding: 5% 0;
-            margin-top: 0px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%; 
-            height: auto;
-        }
-        .level-button .level-num { font-size: clamp(1rem, 5vw, 1.5em); }
-        .level-button .level-pb { font-size: clamp(0.5rem, 2.5vw, 0.7em); margin-top: 2px; }
-        .level-button.locked { background-color: #555; color: #888; cursor: not-allowed; transform: none !important; }
-        .level-button.extra { background-color: transparent; border: 3px solid var(--extra-color); color: var(--extra-color); }
-        .level-button.extra:hover { background-color: var(--extra-color); color: white; }
-        .level-button.perfect { background-color: var(--perfect-color); border-color: var(--perfect-color); color: white; }
-        .level-button.perfect:hover { background-color: #218838; }
-
-        #win-modal {
-            background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
-            z-index: 10;
-        }
-        #win-modal-content { border-radius: 15px; padding: 30px; text-align: center; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-
-        .credits {
-            position: absolute;
-            bottom: 10px;
-            font-size: 0.8em;
-            color: #888;
-        }
-
-        #tutorial-overlay {
-            z-index: 100;
-            background-color: transparent;
-        }
-        #tutorial-highlight {
-            position: absolute;
-            border-radius: 10px;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
-            transition: all 0.4s ease-in-out;
-            pointer-events: none;
-        }
-        #tutorial-highlight.spotlight-bright {
-            box-shadow: 0 0 20px 15px rgba(238, 238, 238, 0.7), /* This is the new bright inner glow */
-            0 0 0 9999px rgba(0, 0, 0, 0.7);       /* This is the existing dark overlay */
-        }
-        #tutorial-text-box {
-            position: absolute;
-            background-color: var(--grid-bg);
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid var(--cell-off);
-            max-width: 300px;
-            text-align: center;
-            transition: all 0.4s ease-in-out;
-        }
-        .rtl #tutorial-text-box{
-            font-size: clamp(1rem, 5vw, 1.2em);
-        }
-    </style>
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#121212">
+<meta name="description" content="Lights On: a lights-out puzzle game. Turn every light on in as few moves as you can.">
+<title>Lights On</title>
+<link rel="icon" type="image/png" href="Lights-On-Logo.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VDZD6K5CRR"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-VDZD6K5CRR');
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-VDZD6K5CRR');
 </script>
+<style>
+@font-face {
+  font-family: 'Glowtone';
+  src: url('glowtone.otf') format('opentype');
+  font-display: swap;
+}
+:root {
+  --bg-color: #121212; --grid-bg: #1d1d1d; --cell-off: #333; --cell-on: #ffd700;
+  --text-color: #f0f0f0; --primary-color: #007bff; --secondary-color: #6c757d;
+  --extra-color: #ff8c00; --perfect-color: #28a745; --shadow-color: rgba(255, 215, 0, 0.5);
+  --board: min(90vmin, 500px);
+}
+* { -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-color);
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; height: 100dvh; margin: 0; overflow: hidden;
+}
+body.rtl { direction: rtl; }
+:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+.screen {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; justify-content: safe center;
+  width: 100%; height: 100%; box-sizing: border-box; padding: 10px 0;
+  position: absolute; top: 0; left: 0; overflow-y: auto;
+  opacity: 1; visibility: visible; z-index: 1;
+  transition: opacity 0.3s ease-in-out, visibility 0s;
+}
+.screen.hidden {
+  opacity: 0; visibility: hidden; pointer-events: none; z-index: 0;
+  transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
+}
+h1 {
+  font-family: 'Glowtone', 'Poppins', sans-serif; display: flex; align-items: center; justify-content: center;
+  text-shadow: 0 0 8px rgba(255,255,255,.6), 0 0 10px rgba(255,255,255,.4); direction: ltr;
+}
+h1 .word { margin-right: .3em; }
+h1 svg { height: 1.15em; width: auto; flex: none; margin: 0 .1em 0 .06em; transform: rotate(35deg); filter: drop-shadow(0 0 5px rgba(255,255,255,.7)); }
+h2 { text-align: center; }
+
+.button {
+  background-color: var(--primary-color); color: white; border: none; border-radius: 8px;
+  padding: 12px 24px; font-family: inherit; font-size: 1.2em; cursor: pointer; margin: 10px;
+  transition: transform 0.2s, background-color 0.2s;
+}
+.button:disabled { cursor: not-allowed; }
+.button.timed-button { opacity: 0.6; transform: none !important; }
+@media (hover: hover) { .button:not(:disabled):hover { transform: scale(1.05); } }
+.button.secondary { background-color: var(--secondary-color); }
+.button.danger { background-color: #dc3545; }
+.button.dev-button { background-color: var(--extra-color); }
+.row { display: flex; flex-wrap: wrap; justify-content: center; }
+
+#info-bar { display: flex; justify-content: space-between; width: var(--board); font-size: 1.2em; font-weight: 600; }
+#grid-container {
+  display: grid; gap: 10px; background-color: var(--grid-bg); padding: 15px; border-radius: 12px;
+  box-sizing: border-box; width: max(160px, min(var(--board), calc(100dvh - 230px))); aspect-ratio: 1;
+  margin: 20px 0; direction: ltr;
+}
+.cell {
+  background-color: var(--cell-off); border: 0; padding: 0; border-radius: 8px; cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease-out, background-color 0.2s ease, box-shadow 0.25s ease;
+}
+.cell:active { transform: scale(0.95); }
+.cell.on { background-color: var(--cell-on); box-shadow: 0 0 20px var(--shadow-color); }
+.cell.hint { animation: hintPulse 0.8s ease-in-out 3; outline: 3px solid var(--primary-color); }
+@keyframes hintPulse { 50% { transform: scale(0.85); } }
+
+#level-select-screen .levels-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(8px, 2vw, 15px);
+  padding: 0 10px; width: 95%; max-width: 500px; box-sizing: border-box;
+}
+.level-button {
+  font-weight: 600; padding: 5% 0; margin: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; width: 100%; height: auto;
+}
+.level-button .level-num { font-size: clamp(1rem, 5vw, 1.5em); }
+.level-button .level-pb { font-size: clamp(0.5rem, 2.5vw, 0.7em); margin-top: 2px; }
+.level-button.locked { background-color: #555; color: #888; cursor: not-allowed; transform: none !important; }
+.level-button.extra { background-color: transparent; border: 3px solid var(--extra-color); color: var(--extra-color); }
+.level-button.extra:hover { background-color: var(--extra-color); color: white; }
+.level-button.perfect { background-color: var(--perfect-color); border-color: var(--perfect-color); color: white; }
+
+.random-btn {
+  width: 95%; max-width: 480px; box-sizing: border-box; margin: 16px 10px 4px; background-color: #17a2b8;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.random-btn.r5 { background-color: var(--extra-color); }
+.random-btn small { font-size: 0.6em; font-weight: 400; }
+.random-btn:disabled { background-color: #3a3a3a; color: #999; }
+.menu-btn { margin-top: 28px; background-color: transparent; border: 2px solid var(--secondary-color); color: #ccc; font-size: 1em; }
+.menu-btn:hover { background-color: var(--secondary-color); color: #fff; }
+
+#win-modal { background-color: rgba(0,0,0,.8); backdrop-filter: blur(5px); z-index: 10; }
+#win-modal-content { border-radius: 15px; padding: 30px; text-align: center; max-width: 90vw; }
+#win-modal:not(.hidden) #win-modal-content { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+.credits {
+  position: absolute; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
+  margin: 0; text-align: center; font-size: 0.8em; color: #888;
+}
+
+#tutorial-overlay { z-index: 100; background-color: transparent; overflow: hidden; }
+#tutorial-highlight {
+  position: absolute; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,.7);
+  transition: all 0.4s ease-in-out; pointer-events: none;
+}
+#tutorial-highlight.spotlight-bright { box-shadow: 0 0 20px 15px rgba(238,238,238,.7), 0 0 0 9999px rgba(0,0,0,.7); }
+#tutorial-text-box {
+  position: absolute; background-color: var(--grid-bg); padding: 20px; border-radius: 10px;
+  border: 1px solid var(--cell-off); max-width: 300px; text-align: center; box-sizing: border-box;
+}
+.rtl #tutorial-text-box { font-size: clamp(1rem, 5vw, 1.2em); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
 <body>
-    <div id="game-container">
-        <!-- SCREENS -->
-        <div id="game-screen" class="screen hidden">
-            <div id="info-bar">
-                <span id="level-display" data-translate-key="level">Level 1</span>
-                <span id="moves-display"></span>
-            </div>
-            <div id="grid-container"></div>
-            <div id="controls">
-                <button class="button" onclick="resetLevel()" data-translate-key="reset">Reset</button>
-                <button class="button secondary" id="game-menu-btn" data-translate-key="menu">Menu</button>
-                <button class="button dev-button" id="skip-level-btn" data-translate-key="skip">Skip (Test)</button>
-            </div>
-        </div>
-
-        <div id="start-screen" class="screen hidden">
-            <h1>
-                <span>Lights On</span>
-                <svg viewBox="0 0 114.98 122.88"><g><path fill="#5C546A" d="M68.72,116.34c-1.22,2.09-2.9,3.72-4.82,4.83c-1.71,1-3.62,1.57-5.53,1.69c-1.94,0.12-3.9-0.25-5.69-1.11 c-1.22-0.6-2.36-1.43-3.37-2.51L68.72,116.34L68.72,116.34L68.72,116.34z M71.41,95.83l-0.63,2.95l-0.16,2.1l-25.33,3.77 c-0.09-1.51-0.33-3.14-0.71-4.83L71.41,95.83L71.41,95.83L71.41,95.83z M70.57,105.48l0.02,1.27l0.03,0.44 c0.07,0.83,0.08,1.67,0.03,2.5l-0.38,1.83l-23.52,3.5l-0.41-0.94l-0.92-3.76l-0.02-1.09L70.57,105.48L70.57,105.48L70.57,105.48z"/><path d="M56.76,3.84c0.03-1.09,0.49-2.06,1.22-2.75c0.71-0.68,1.69-1.09,2.75-1.08V0c0.09,0,0.18,0.01,0.27,0.02 c0.99,0.08,1.88,0.53,2.52,1.2c0.68,0.71,1.09,1.68,1.08,2.75h0.01c0,0.07,0,0.14-0.01,0.2l-0.21,8.37l0.01,0 c0,0.09-0.01,0.18-0.02,0.27c-0.08,1-0.53,1.88-1.2,2.52c-0.72,0.68-1.69,1.09-2.75,1.08v0.01c-0.09,0-0.18-0.01-0.27-0.02 c-1-0.08-1.88-0.53-2.52-1.2c-0.68-0.72-1.09-1.69-1.08-2.75l-0.01,0c0-0.07,0-0.14,0.01-0.2L56.76,3.84L56.76,3.84L56.76,3.84z M14.26,18.5c-0.79-0.74-1.21-1.73-1.25-2.73c-0.04-1,0.31-2.02,1.04-2.81c0.74-0.79,1.73-1.21,2.73-1.25 c1-0.04,2.02,0.31,2.81,1.04l6.28,5.85c0.79,0.74,1.21,1.73,1.25,2.73c0.04,1.01-0.31,2.02-1.04,2.81 c-0.74,0.79-1.73,1.21-2.73,1.25c-1.01,0.04-2.02-0.31-2.81-1.04L14.26,18.5L14.26,18.5L14.26,18.5z M3.99,61.66 c-1.06,0.02-2.03-0.39-2.75-1.06c-0.73-0.69-1.2-1.65-1.24-2.74c-0.04-1.08,0.37-2.08,1.06-2.81c0.69-0.73,1.65-1.2,2.74-1.23 l8.57-0.29c1.08-0.04,2.08,0.37,2.81,1.06c0.73,0.69,1.2,1.65,1.23,2.74v0.06h0.01l-0.01,0.14c-0.02,1.01-0.42,1.92-1.06,2.61 c-0.69,0.73-1.65,1.19-2.74,1.23h-0.06v0.01h-0.09L3.99,61.66L3.99,61.66L3.99,61.66z M110.69,49.51l0.13-0.01 c1.02-0.06,1.97,0.27,2.71,0.87c0.78,0.63,1.31,1.57,1.43,2.64v0.04c0.01,0,0.01,0.11,0.01,0.13c0.06,1.02-0.27,1.97-0.87,2.71 c-0.63,0.78-1.57,1.31-2.64,1.43l-8.53,0.9c-1.08,0.11-2.1-0.23-2.87-0.86c-0.78-0.63-1.32-1.57-1.43-2.64 c-0.11-1.07,0.23-2.1,0.86-2.87c0.63-0.78,1.57-1.32,2.64-1.43C104.98,50.11,107.84,49.78,110.69,49.51L110.69,49.51L110.69,49.51 L110.69,49.51z M93.8,15.38c0.61-0.9,1.51-1.46,2.49-1.66c0.98-0.19,2.03-0.01,2.94,0.59l0.01,0.01c0.9,0.6,1.47,1.51,1.66,2.49 c0.19,0.98,0.01,2.03-0.59,2.94l-4.77,7.13c-0.6,0.9-1.51,1.47-2.5,1.67c-0.98,0.19-2.03,0.01-2.94-0.59 c-0.9-0.6-1.47-1.52-1.67-2.5c-0.19-0.98-0.01-2.03,0.59-2.94L93.8,15.38L93.8,15.38L93.8,15.38z"/><path fill="#F4BB2C" d="M36.37,82.46c-2.88-3.29-5.86-6.71-8.22-11.74c-2.31-4.96-3.59-10.08-3.55-15.4c0.05-5.32,1.4-10.8,4.34-16.46 c0.02-0.04,0.04-0.07,0.06-0.11l0,0c3.85-6.52,9.24-10.88,15.24-13.32c5.03-2.06,10.5-2.76,15.86-2.27 c5.34,0.49,10.57,2.17,15.14,4.87c5.81,3.44,10.59,8.54,13.22,14.98c1.42,3.49,2.38,7.38,2.5,11.64c0.12,4.25-0.61,8.83-2.57,13.67 c-3,7.43-10.01,15.39-14.6,22.7c-0.25-0.05-0.51-0.06-0.77-0.02l-6.19,0.92l9.43-32.79c0.27-0.93-0.28-1.9-1.21-2.17 c-0.93-0.26-1.9,0.28-2.17,1.21L63,92.49l-9.36,1.39l-9.89-31.43c0.71,0.14,1.46-0.17,1.85-0.83l7.01-11.93l3.57,8.19 c0.39,0.89,1.42,1.29,2.3,0.91c0.44-0.19,0.76-0.55,0.93-0.96l0,0l3.16-7.98l3.7,9.76c0.34,0.91,1.35,1.36,2.26,1.02 s1.36-1.35,1.02-2.26l-5.27-13.9c-0.15-0.49-0.52-0.91-1.03-1.11c-0.9-0.36-1.92,0.09-2.28,0.99l-3.27,8.27l-3.26-7.48 c-0.14-0.33-0.39-0.62-0.72-0.81c-0.83-0.49-1.91-0.21-2.39,0.62l-8.52,14.5l-0.61-1.93c-0.29-0.92-1.27-1.44-2.19-1.15 c-0.92,0.29-1.44,1.27-1.15,2.19L50.13,94.4l-6.78,1.01C41.72,90.56,39.22,85.72,36.37,82.46L36.37,82.46L36.37,82.46z"/></g></svg>
-            </h1>
-            <button class="button" id="start-game-btn" data-translate-key="newGame">New Game</button>
-            <button class="button secondary" id="reset-progress-btn" data-translate-key="resetProgress">Reset Progress</button>
-            <button class="button secondary" id="language-toggle-btn">English</button>
-            <p class="credits">A Game by Abdullah<br>Tested By Khalid</p>
-        </div>
-
-        <div id="level-select-screen" class="screen hidden">
-            <h2 data-translate-key="levels4x4">4x4 Levels</h2>
-            <div id="levels-grid-container-normal" class="levels-grid"></div>
-            <h2 data-translate-key="levels5x5">5x5 Extra Levels</h2>
-            <div id="levels-grid-container-extra" class="levels-grid"></div>
-            <button class="button" id="level-select-main-menu-btn" data-translate-key="mainMenu">Main Menu</button>
-        </div>
-        
-        <div id="win-modal" class="screen hidden">
-            <div id="win-modal-content">
-                <h2 id="win-title"></h2>
-                <p id="win-message"></p>
-                <p id="win-par"></p>
-                <button class="button" id="win-next-btn"></button>
-            </div>
-        </div>
-        
-        <div id="tutorial-overlay" class="screen hidden">
-            <div id="tutorial-highlight"></div>
-            <div id="tutorial-text-box">
-                <p id="tutorial-text"></p>
-                <button class="button" id="tutorial-ok-btn">OK</button>
-            </div>
-        </div>
+<div id="game-container">
+  <div id="game-screen" class="screen hidden">
+    <div id="info-bar">
+      <span id="level-display"></span>
+      <span id="moves-display"></span>
     </div>
+    <div id="grid-container" role="group"></div>
+    <div id="controls" class="row">
+      <button class="button danger" id="reset-btn" data-translate-key="reset">Reset</button>
+      <button class="button" id="hint-btn" data-translate-key="hint">Hint</button>
+      <button class="button secondary" id="game-menu-btn" data-translate-key="menu">Menu</button>
+      <button class="button dev-button" id="skip-level-btn" data-translate-key="skip">Skip (Test)</button>
+    </div>
+  </div>
 
-    <script>
-        const devmode = 0;
-        const TUTORIAL_DELAY = 5000; // 3 seconds
-        const levels = [
-            { par: 2, size: 4, pattern: "1011000110101100" }, { par: 4, size: 4, pattern: "1110010001001110" },
-            { par: 3, size: 4, pattern: "1010000111111111" }, { par: 4, size: 4, pattern: "1001100101101111" },
-            { par: 5, size: 4, pattern: "1110110110100100" }, 
-            { par: 7, size: 5, pattern: "1111001010011100001100001" },
-            { par: 8, size: 5, pattern: "0010010100101111001000010" }, { par: 9, size: 5, pattern: "0011110010101000011001111" },
-            { par: 11, size: 5, pattern: "1111101111101101001101001" }, { par: 13, size: 5, pattern: "1010010100111000011101111" },
-        ];
-        /*
-        Solutions (you sneaky code digger):
-        (row, col) from 1 to 4.
-        level1: (2,2), (4,4)
-        level2: (4,2), (3,1), (4,3), (2,4)
-        level3: (1,1), (1,2), (1,3)
-        level4: (1,1), (1,4), (2,1), (2,4)
-        level5: (1,2), (1,3), (2,1), (3,1), (4,4)
-        level6: (2,5), (3,1), (3,3), (3,4), (4,5), (5,2), (5,5)
-        level7: (1,2), (1,4), (3,5), (4,2), (4,4), (4,5), (5,1), (5,3)
-        level8: (1,2), (1,4), (2,4), (2,5), (3,4), (3,5), (4,2), (4,3), (5,2)
-        level9: (1,1), (2,1), (2,2), (3,3), (4,1), (4,2), (4,3), (4,4), (4,5), (5,3), (5,4)
-        level10: (1,1), (2,1), (2,4), (2,5), (3,3), (3,4), (3,5), (4,1), (4,2), (4,4), (5,1), (5,2), (5,3)
-        */
-        
-        const translations = {
-            en: {
-                level: "Level", moves: "Moves", par: "Par", best: "Best", newGame: "New Game", continue: "Continue",
-                levelSelect: "Level Select", resetProgress: "Reset Progress", mainMenu: "Main Menu", reset: "Reset",
-                skip: "Skip (Test)", levels4x4: "4x4 Levels", levels5x5: "5x5 Extra Levels", levelComplete: "Level Complete!",
-                excellentSolve: "Excellent solve!", goodJob: "Good job!", campaignComplete: "Campaign Complete!",
-                unlocked: "You unlocked <b>Level Select</b><br>and <b>5x5 Extra Levels!</b>", goToLevelSelect: "Go to Level Select",
-                allLevelsComplete: "Congratulations!", allLevelsBeaten: "You have beaten all levels!", nextLevel: "Next Level", ok: "OK",
-                resetConfirm: "Are you sure you want to reset all your progress? (This will also re-enable the tutorial.)",
-                tutorial_step1: "You can tap a tile to flip its light and the lights of its neighbors. (Try tapping this one.)",
-                tutorial_step2: "The goal is to turn all the lights ON. The 'Par' is the best possible score for the level.",
-                tutorial_step3: "Use these buttons to reset the level or return to the menu. Good luck!",
-            },
-            ar: {
-                level: "مستوى", moves: "تحركات", par: "أقل حركات محتاجة", best: "أفضل", newGame: "لعبة جديدة", continue: "متابعة",
-                levelSelect: "اختيار المستوى", resetProgress: "إعادة تعيين التقدم", mainMenu: "القائمة الرئيسية", reset: "إعادة تعيين",
-                skip: "تخطي (اختبار)", levels4x4: "مستويات 4x4", levels5x5: "مستويات إضافية 5x5", levelComplete: "اكتمل المستوى!",
-                excellentSolve: "حل ممتاز!", goodJob: "عمل جيد!", campaignComplete: "اكتملت الحملة!",
-                unlocked: "لقد فتحت <b>اختيار المستوى</b><br>و <b>5 مستويات إضافية 5x5!</b>", goToLevelSelect: "اذهب إلى اختيار المستوى",
-                allLevelsComplete: "تهانينا!", allLevelsBeaten: "لقد تغلبت على جميع المستويات!", nextLevel: "المستوى التالي", ok: "حسنا",
-                resetConfirm: "هل أنت متأكد من أنك تريد إعادة ضبط كل تقدمك؟ (سيؤدي هذا أيضًا إلى إعادة تمكين البرنامج التعليمي.)",
-                tutorial_step1: "اضغط على مربع لقلب ضوءه وأضواء جيرانه. حاول الضغط على هذا.",
-                tutorial_step2: "الهدف هو تشغيل كل الأضواء. 'أقل حركات محتاجة' هو أفضل نتيجة ممكنة للمستوى.",
-                tutorial_step3: "استخدم هذه الأزرار لإعادة ضبط المستوى أو العودة إلى القائمة. بالتوفيق!",
-            }
-        };
-        let currentLanguage; // Declare the variable first
+  <div id="start-screen" class="screen hidden">
+    <h1 aria-label="Lights On">
+      <span class="word" aria-hidden="true">Lights</span>
+      <svg aria-hidden="true" viewBox="0 0 114.98 122.88"><g><path fill="#5C546A" d="M68.72,116.34c-1.22,2.09-2.9,3.72-4.82,4.83c-1.71,1-3.62,1.57-5.53,1.69c-1.94,0.12-3.9-0.25-5.69-1.11 c-1.22-0.6-2.36-1.43-3.37-2.51L68.72,116.34L68.72,116.34L68.72,116.34z M71.41,95.83l-0.63,2.95l-0.16,2.1l-25.33,3.77 c-0.09-1.51-0.33-3.14-0.71-4.83L71.41,95.83L71.41,95.83L71.41,95.83z M70.57,105.48l0.02,1.27l0.03,0.44 c0.07,0.83,0.08,1.67,0.03,2.5l-0.38,1.83l-23.52,3.5l-0.41-0.94l-0.92-3.76l-0.02-1.09L70.57,105.48L70.57,105.48L70.57,105.48z"/><path d="M56.76,3.84c0.03-1.09,0.49-2.06,1.22-2.75c0.71-0.68,1.69-1.09,2.75-1.08V0c0.09,0,0.18,0.01,0.27,0.02 c0.99,0.08,1.88,0.53,2.52,1.2c0.68,0.71,1.09,1.68,1.08,2.75h0.01c0,0.07,0,0.14-0.01,0.2l-0.21,8.37l0.01,0 c0,0.09-0.01,0.18-0.02,0.27c-0.08,1-0.53,1.88-1.2,2.52c-0.72,0.68-1.69,1.09-2.75,1.08v0.01c-0.09,0-0.18-0.01-0.27-0.02 c-1-0.08-1.88-0.53-2.52-1.2c-0.68-0.72-1.09-1.69-1.08-2.75l-0.01,0c0-0.07,0-0.14,0.01-0.2L56.76,3.84L56.76,3.84L56.76,3.84z M14.26,18.5c-0.79-0.74-1.21-1.73-1.25-2.73c-0.04-1,0.31-2.02,1.04-2.81c0.74-0.79,1.73-1.21,2.73-1.25 c1-0.04,2.02,0.31,2.81,1.04l6.28,5.85c0.79,0.74,1.21,1.73,1.25,2.73c0.04,1.01-0.31,2.02-1.04,2.81 c-0.74,0.79-1.73,1.21-2.73,1.25c-1.01,0.04-2.02-0.31-2.81-1.04L14.26,18.5L14.26,18.5L14.26,18.5z M3.99,61.66 c-1.06,0.02-2.03-0.39-2.75-1.06c-0.73-0.69-1.2-1.65-1.24-2.74c-0.04-1.08,0.37-2.08,1.06-2.81c0.69-0.73,1.65-1.2,2.74-1.23 l8.57-0.29c1.08-0.04,2.08,0.37,2.81,1.06c0.73,0.69,1.2,1.65,1.23,2.74v0.06h0.01l-0.01,0.14c-0.02,1.01-0.42,1.92-1.06,2.61 c-0.69,0.73-1.65,1.19-2.74,1.23h-0.06v0.01h-0.09L3.99,61.66L3.99,61.66L3.99,61.66z M110.69,49.51l0.13-0.01 c1.02-0.06,1.97,0.27,2.71,0.87c0.78,0.63,1.31,1.57,1.43,2.64v0.04c0.01,0,0.01,0.11,0.01,0.13c0.06,1.02-0.27,1.97-0.87,2.71 c-0.63,0.78-1.57,1.31-2.64,1.43l-8.53,0.9c-1.08,0.11-2.1-0.23-2.87-0.86c-0.78-0.63-1.32-1.57-1.43-2.64 c-0.11-1.07,0.23-2.1,0.86-2.87c0.63-0.78,1.57-1.32,2.64-1.43C104.98,50.11,107.84,49.78,110.69,49.51L110.69,49.51L110.69,49.51 L110.69,49.51z M93.8,15.38c0.61-0.9,1.51-1.46,2.49-1.66c0.98-0.19,2.03-0.01,2.94,0.59l0.01,0.01c0.9,0.6,1.47,1.51,1.66,2.49 c0.19,0.98,0.01,2.03-0.59,2.94l-4.77,7.13c-0.6,0.9-1.51,1.47-2.5,1.67c-0.98,0.19-2.03,0.01-2.94-0.59 c-0.9-0.6-1.47-1.52-1.67-2.5c-0.19-0.98-0.01-2.03,0.59-2.94L93.8,15.38L93.8,15.38L93.8,15.38z"/><path fill="#F4BB2C" d="M36.37,82.46c-2.88-3.29-5.86-6.71-8.22-11.74c-2.31-4.96-3.59-10.08-3.55-15.4c0.05-5.32,1.4-10.8,4.34-16.46 c0.02-0.04,0.04-0.07,0.06-0.11l0,0c3.85-6.52,9.24-10.88,15.24-13.32c5.03-2.06,10.5-2.76,15.86-2.27 c5.34,0.49,10.57,2.17,15.14,4.87c5.81,3.44,10.59,8.54,13.22,14.98c1.42,3.49,2.38,7.38,2.5,11.64c0.12,4.25-0.61,8.83-2.57,13.67 c-3,7.43-10.01,15.39-14.6,22.7c-0.25-0.05-0.51-0.06-0.77-0.02l-6.19,0.92l9.43-32.79c0.27-0.93-0.28-1.9-1.21-2.17 c-0.93-0.26-1.9,0.28-2.17,1.21L63,92.49l-9.36,1.39l-9.89-31.43c0.71,0.14,1.46-0.17,1.85-0.83l7.01-11.93l3.57,8.19 c0.39,0.89,1.42,1.29,2.3,0.91c0.44-0.19,0.76-0.55,0.93-0.96l0,0l3.16-7.98l3.7,9.76c0.34,0.91,1.35,1.36,2.26,1.02 s1.36-1.35,1.02-2.26l-5.27-13.9c-0.15-0.49-0.52-0.91-1.03-1.11c-0.9-0.36-1.92,0.09-2.28,0.99l-3.27,8.27l-3.26-7.48 c-0.14-0.33-0.39-0.62-0.72-0.81c-0.83-0.49-1.91-0.21-2.39,0.62l-8.52,14.5l-0.61-1.93c-0.29-0.92-1.27-1.44-2.19-1.15 c-0.92,0.29-1.44,1.27-1.15,2.19L50.13,94.4l-6.78,1.01C41.72,90.56,39.22,85.72,36.37,82.46L36.37,82.46L36.37,82.46z"/></g></svg>
+      <span aria-hidden="true">n</span>
+    </h1>
+    <button class="button" id="start-game-btn" data-translate-key="newGame">New Game</button>
+    <button class="button secondary" id="reset-progress-btn" data-translate-key="resetProgress">Reset Progress</button>
+    <button class="button secondary" id="language-toggle-btn">English</button>
+    <p class="credits">A Game by Abdullah<br>Tested By Khalid</p>
+  </div>
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const langParam = urlParams.get('lang'); // Check for 'lang' in the URL
+  <div id="level-select-screen" class="screen hidden">
+    <h2 data-translate-key="levels4x4">4x4 Levels</h2>
+    <div id="levels-grid-container-normal" class="levels-grid"></div>
+    <button class="button random-btn" id="random-4-btn" type="button"></button>
+    <h2 data-translate-key="levels5x5">5x5 Extra Levels</h2>
+    <div id="levels-grid-container-extra" class="levels-grid"></div>
+    <button class="button random-btn r5" id="random-5-btn" type="button"></button>
+    <button class="button menu-btn" id="level-select-main-menu-btn" data-translate-key="mainMenu">Main Menu</button>
+  </div>
 
-        if (langParam === 'en' || langParam === 'ar') {
-            // If a valid language is in the URL, set it as the current language
-            currentLanguage = langParam;
-            // Also, save this choice so it's remembered for future visits
-            localStorage.setItem('lightsOnLanguage', currentLanguage); 
-            // Clean the parameter from the URL bar for a neater look
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } 
-        else {
-            // If no valid URL parameter, fall back to the saved language or the default ('ar')
-            currentLanguage = localStorage.getItem('lightsOnLanguage') || 'en';
-        }
+  <div id="win-modal" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="win-title">
+    <div id="win-modal-content">
+      <h2 id="win-title"></h2>
+      <p id="win-message"></p>
+      <p id="win-par"></p>
+      <div class="row">
+        <button class="button secondary" id="win-replay-btn" data-translate-key="replay">Replay</button>
+        <button class="button" id="win-next-btn"></button>
+      </div>
+    </div>
+  </div>
 
-        const screens = Object.fromEntries(Array.from(document.querySelectorAll('.screen')).map(el => [el.id, el]));
-        const gridContainer = document.getElementById('grid-container');
-        const movesDisplay = document.getElementById('moves-display');
-        const levelDisplay = document.getElementById('level-display');
-        let audioCtx;
+  <div id="tutorial-overlay" class="screen hidden">
+    <div id="tutorial-highlight"></div>
+    <div id="tutorial-text-box">
+      <p id="tutorial-text"></p>
+      <button class="button" id="tutorial-ok-btn">OK</button>
+    </div>
+  </div>
+</div>
 
-        let gameState = { currentLevel: 1, gridSize: 4, moves: 0, cells: [], progress: { highestLevelBeaten: 0, pbs: {}, tutorialCompleted: false } };
-        
-        function setLanguage(lang) {
-            currentLanguage = lang;
-            localStorage.setItem('lightsOnLanguage', lang);
-            document.body.classList.toggle('rtl', lang === 'ar');
-            document.querySelectorAll('[data-translate-key]').forEach(el => {
-                const key = el.getAttribute('data-translate-key');
-                el.textContent = translations[lang][key] || el.textContent;
-            });
-            document.getElementById('language-toggle-btn').textContent = lang === 'en' ? 'العربية' : 'English';
-            updateUI();
-            updateStartScreen();
-        }
+<script>
+const devmode = 0;
+const TUTORIAL_DELAY = 2000; // ms the OK button stays locked on each tutorial step
+const DEFAULT_LANG = (navigator.language || '').toLowerCase().startsWith('ar') ? 'ar' : 'en';
 
-        function showScreen(screenId) {
-            Object.values(screens).forEach(s => s.classList.add('hidden'));
-            screens[screenId].classList.remove('hidden');
-        }
-        
-        function createGrid(size) {
-            gridContainer.innerHTML = ''; gameState.cells = []; gameState.gridSize = size;
-            gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-            for (let i = 0; i < size * size; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell'; cell.dataset.index = i;
-                cell.addEventListener('click', () => handleCellClick(i));
-                gridContainer.appendChild(cell); gameState.cells.push(cell);
-            }
-        }
-        
-        function loadLevel(levelNum) {
-            const levelData = levels[levelNum - 1];
-            if (gameState.gridSize !== levelData.size) { createGrid(levelData.size); }
-            gameState.currentLevel = levelNum; gameState.moves = 0;
-            gameState.cells.forEach((cell, i) => cell.classList.toggle('on', levelData.pattern[i] === '1'));
-            updateUI();
-        }
+const levels = [
+  { par: 2, size: 4, pattern: "1011000110101100" }, { par: 4, size: 4, pattern: "1110010001001110" },
+  { par: 3, size: 4, pattern: "1010000111111111" }, { par: 4, size: 4, pattern: "1001100101101111" },
+  { par: 5, size: 4, pattern: "1110110110100100" },
+  { par: 7, size: 5, pattern: "1111001010011100001100001" },
+  { par: 8, size: 5, pattern: "0010010100101111001000010" }, { par: 9, size: 5, pattern: "0011110010101000011001111" },
+  { par: 11, size: 5, pattern: "1111101111101101001101001" }, { par: 13, size: 5, pattern: "1010010100111000011101111" },
+];
 
-        function startGame(levelNum) {
-            if (levelNum === 1 && !gameState.progress.tutorialCompleted) {
-                runTutorial();
-            } else {
-                loadLevel(levelNum);
-                showScreen('game-screen');
-            }
-        }
-        function resetLevel() { loadLevel(gameState.currentLevel); }
-        
-        function handleCellClick(index) {
-            gameState.moves++;
-            const size = gameState.gridSize; const col = index % size;
-            [index, index - size, index + size, (col > 0 ? index - 1 : -1), (col < size - 1 ? index + 1 : -1)]
-                .filter(i => i >= 0 && i < size * size).forEach(i => gameState.cells[i].classList.toggle('on'));
-            updateUI();
-            if (gameState.cells.every(c => c.classList.contains('on'))) handleWin();
-        }
+const translations = {
+  en: {
+    level: "Level", moves: "Moves", par: "Par", best: "Best", newGame: "New Game", continue: "Continue",
+    levelSelect: "Level Select", resetProgress: "Reset Progress", mainMenu: "Main Menu", reset: "Reset", menu: "Menu",
+    skip: "Skip (Test)", levels4x4: "4x4 Levels", levels5x5: "5x5 Extra Levels",
+    levelNComplete: "Level {n} Complete!", excellentSolve: "Excellent solve!", goodJob: "Good job!",
+    campaignComplete: "Campaign Complete!",
+    unlocked: "You unlocked <b>Level Select</b><br>and <b>5x5 Extra Levels!</b>", goToLevelSelect: "Go to Level Select",
+    allLevelsComplete: "Congratulations!", allLevelsBeaten: "You have beaten all levels!", nextLevel: "Next Level", ok: "OK",
+    resetConfirm: "Are you sure you want to reset all your progress? (This will also re-enable the tutorial.)",
+    random4: "Random 4x4", random5: "Random 5x5", lock4: "Finish levels 1–5 to unlock", lock5: "Finish levels 6–10 to unlock", newPuzzle: "New Puzzle", puzzleSolved: "Puzzle Solved!", replay: "Replay",
+    hint: "Hint", cell: "Row {r}, column {c}",
+    tutorial_step1: "You can tap a tile to flip its light and the lights of its neighbors. (Try tapping this one.)",
+    tutorial_step2: "The goal is to turn all the lights ON. The 'Par' is the best possible score for the level.",
+    tutorial_step3: "Use these buttons to reset the level, get a hint, or return to the menu. Good luck!",
+  },
+  ar: {
+    level: "مستوى", moves: "تحركات", par: "أقل حركات محتاجة", best: "أفضل", newGame: "لعبة جديدة", continue: "متابعة",
+    levelSelect: "اختيار المستوى", resetProgress: "إعادة تعيين التقدم", mainMenu: "القائمة الرئيسية", reset: "إعادة تعيين", menu: "القائمة",
+    skip: "تخطي (اختبار)", levels4x4: "مستويات 4x4", levels5x5: "مستويات إضافية 5x5",
+    levelNComplete: "اكتمل المستوى {n}!", excellentSolve: "حل ممتاز!", goodJob: "عمل جيد!",
+    campaignComplete: "اكتملت الحملة!",
+    unlocked: "لقد فتحت <b>اختيار المستوى</b><br>و <b>5 مستويات إضافية 5x5!</b>", goToLevelSelect: "اذهب إلى اختيار المستوى",
+    allLevelsComplete: "تهانينا!", allLevelsBeaten: "لقد تغلبت على جميع المستويات!", nextLevel: "المستوى التالي", ok: "حسنا",
+    resetConfirm: "هل أنت متأكد من أنك تريد إعادة ضبط كل تقدمك؟ (سيؤدي هذا أيضًا إلى إعادة تمكين البرنامج التعليمي.)",
+    random4: "لغز عشوائي 4x4", random5: "لغز عشوائي 5x5", lock4: "أنهِ المستويات 1–5 لفتحه", lock5: "أنهِ المستويات 6–10 لفتحه", newPuzzle: "لغز جديد", puzzleSolved: "تم حل اللغز!", replay: "إعادة اللعب",
+    hint: "تلميح", cell: "صف {r}، عمود {c}",
+    tutorial_step1: "اضغط على مربع لقلب ضوءه وأضواء جيرانه. حاول الضغط على هذا.",
+    tutorial_step2: "الهدف هو تشغيل كل الأضواء. 'أقل حركات محتاجة' هو أفضل نتيجة ممكنة للمستوى.",
+    tutorial_step3: "استخدم هذه الأزرار لإعادة ضبط المستوى أو الحصول على تلميح أو العودة إلى القائمة. بالتوفيق!",
+  }
+};
+const T = () => translations[currentLanguage];
 
-        function triggerVibration(pattern) { if ('vibrate' in navigator) navigator.vibrate(pattern); }
+// Safe storage (can throw when blocked, e.g. some private modes or iframes)
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
 
-        function handleWin() {
-            triggerVibration([100, 50, 300, 50, 300, 150, 100, 50, 100, 150, 300, 50, 100]); // W-I-N
-            gameState.progress.highestLevelBeaten = Math.max(gameState.progress.highestLevelBeaten, gameState.currentLevel);
-            const currentPB = gameState.progress.pbs[gameState.currentLevel];
-            if (!currentPB || gameState.moves < currentPB) { gameState.progress.pbs[gameState.currentLevel] = gameState.moves; }
-            saveProgress();
-            
-            const par = levels[gameState.currentLevel - 1].par;
-            document.getElementById('win-par').textContent = `${translations[currentLanguage].moves}: ${gameState.moves} (${translations[currentLanguage].par}: ${par})`;
-            
-            const winTitle = document.getElementById('win-title'), winNextBtn = document.getElementById('win-next-btn');
-            const winMessage = document.getElementById('win-message');
-            winMessage.textContent = gameState.moves <= par ? translations[currentLanguage].excellentSolve : translations[currentLanguage].goodJob;
+let currentLanguage = DEFAULT_LANG;
+const langParam = new URLSearchParams(window.location.search).get('lang');
+if (langParam === 'en' || langParam === 'ar') {
+  currentLanguage = langParam;
+  store.set('lightsOnLanguage', langParam);
+  window.history.replaceState({}, document.title, window.location.pathname);
+} else {
+  const saved = store.get('lightsOnLanguage');
+  if (saved === 'en' || saved === 'ar') currentLanguage = saved;
+}
 
-            if (gameState.currentLevel === 5 && gameState.progress.highestLevelBeaten === 5) {
-                winTitle.textContent = translations[currentLanguage].campaignComplete;
-                winMessage.innerHTML = translations[currentLanguage].unlocked;
-                winNextBtn.textContent = translations[currentLanguage].goToLevelSelect;
-                winNextBtn.onclick = () => { screens['win-modal'].classList.add('hidden'); showLevelSelect(); };
-            } else if (gameState.currentLevel === levels.length) {
-                winTitle.textContent = translations[currentLanguage].allLevelsComplete;
-                winMessage.textContent = translations[currentLanguage].allLevelsBeaten;
-                winNextBtn.textContent = translations[currentLanguage].goToLevelSelect;
-                winNextBtn.onclick = () => { screens['win-modal'].classList.add('hidden'); showLevelSelect(); };
-            } else {
-                winTitle.textContent = `${translations[currentLanguage].level} ${gameState.currentLevel} ${translations[currentLanguage].levelComplete.split(' ')[0]}`;
-                winNextBtn.textContent = translations[currentLanguage].nextLevel;
-                winNextBtn.onclick = () => { screens['win-modal'].classList.add('hidden'); startGame(gameState.currentLevel + 1); };
-            }
-            screens['win-modal'].classList.remove('hidden');
-        }
+const $ = id => document.getElementById(id);
+const screens = Object.fromEntries(Array.from(document.querySelectorAll('.screen')).map(el => [el.id, el]));
+const gridContainer = $('grid-container'), movesDisplay = $('moves-display'), levelDisplay = $('level-display');
+const defaultProgress = () => ({ highestLevelBeaten: 0, pbs: {}, tutorialCompleted: false });
+let gameState = { currentLevel: 1, random: null, gridSize: 4, moves: 0, cells: [], locked: false, progress: defaultProgress() };
+let winTimer = null, hintTimer = null, tutorialRefresh = null;
 
-        function showLevelSelect() {
-            const normCont = document.getElementById('levels-grid-container-normal'), xtraCont = document.getElementById('levels-grid-container-extra');
-            [normCont, xtraCont].forEach(c => c.innerHTML = '');
+/* ---------- Sound ---------- */
+let audioCtx;
+function tone(freq, dur = 0.12, delay = 0, type = 'sine') {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t0 = audioCtx.currentTime + delay;
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  } catch (e) {}
+}
+function triggerVibration(pattern) { if ('vibrate' in navigator) navigator.vibrate(pattern); }
 
-            for (let i = 1; i <= levels.length; i++) {
-                const levelData = levels[i-1], isUnlocked = i <= gameState.progress.highestLevelBeaten + 1;
-                const pb = gameState.progress.pbs[i], btn = document.createElement('button');
-                btn.innerHTML = `<span class="level-num">${i}</span><span class="level-pb">${pb ? `${translations[currentLanguage].best}: ${pb}` : '---'}</span>`;
-                btn.className = 'button level-button';
-                if (!isUnlocked) btn.classList.add('locked');
-                if (levelData.size === 5) btn.classList.add('extra');
-                if (pb && pb <= levelData.par) btn.classList.add('perfect');
-                if (isUnlocked) btn.onclick = () => startGame(i);
-                (levelData.size === 4 ? normCont : xtraCont).appendChild(btn);
-            }
-            showScreen('level-select-screen');
-        }
+/* ---------- Solver (GF(2) elimination): minimal set of presses that turns every light on ---------- */
+const nb = (n, i) => {
+  const r = (i / n) | 0, c = i % n, a = [i];
+  if (r > 0) a.push(i - n); if (r < n - 1) a.push(i + n);
+  if (c > 0) a.push(i - 1); if (c < n - 1) a.push(i + 1);
+  return a;
+};
+function solve(n, on) {
+  const N = n * n;
+  const rows = Array.from({ length: N }, (_, r) => [nb(n, r).reduce((m, i) => m | (1 << i), 0), on[r] ? 0 : 1]);
+  const pivots = [];
+  let rk = 0;
+  for (let c = 0; c < N; c++) {
+    let p = -1;
+    for (let r = rk; r < N; r++) if ((rows[r][0] >> c) & 1) { p = r; break; }
+    if (p < 0) continue;
+    [rows[rk], rows[p]] = [rows[p], rows[rk]];
+    for (let r = 0; r < N; r++) if (r !== rk && ((rows[r][0] >> c) & 1)) { rows[r][0] ^= rows[rk][0]; rows[r][1] ^= rows[rk][1]; }
+    pivots.push(c); rk++;
+  }
+  for (let r = rk; r < N; r++) if (rows[r][1]) return null;
+  const free = [...Array(N).keys()].filter(c => !pivots.includes(c));
+  let best = null;
+  for (let combo = 0; combo < (1 << free.length); combo++) {
+    let x = 0;
+    free.forEach((f, k) => { if ((combo >> k) & 1) x |= 1 << f; });
+    pivots.forEach((pc, k) => {
+      let v = rows[k][1];
+      free.forEach(f => { if (((rows[k][0] >> f) & 1) && ((x >> f) & 1)) v ^= 1; });
+      if (v) x |= 1 << pc;
+    });
+    const sol = [...Array(N).keys()].filter(i => (x >> i) & 1);
+    if (!best || sol.length < best.length) best = sol;
+  }
+  return best;
+}
 
-        function updateUI() {
-            const levelData = levels[gameState.currentLevel - 1];
-            if (!levelData) return;
-            levelDisplay.textContent = `${translations[currentLanguage].level} ${gameState.currentLevel}`;
-            movesDisplay.textContent = `${translations[currentLanguage].moves}: ${gameState.moves} / ${translations[currentLanguage].par}: ${levelData.par}`;
-            document.getElementById('game-menu-btn').onclick = (gameState.progress.highestLevelBeaten >= 5) ? showLevelSelect : goToStartScreen;
-        }
-        
-        function goToStartScreen() {
-            updateStartScreen();
-            showScreen('start-screen');
-        }
+/* ---------- Language / screens ---------- */
+function setLanguage(lang) {
+  currentLanguage = lang;
+  store.set('lightsOnLanguage', lang);
+  document.body.classList.toggle('rtl', lang === 'ar');
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-translate-key]').forEach(el => {
+    el.textContent = translations[lang][el.getAttribute('data-translate-key')] || el.textContent;
+  });
+  $('language-toggle-btn').textContent = lang === 'en' ? 'العربية' : 'English';
+  labelCells(); updateUI(); updateStartScreen();
+}
+function showScreen(id) {
+  clearTimeout(winTimer);
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+  screens[id].classList.remove('hidden');
+}
 
-        function updateStartScreen() {
-            const startBtn = document.getElementById('start-game-btn');
-            const nextLevel = gameState.progress.highestLevelBeaten + 1;
-            if (gameState.progress.highestLevelBeaten >= 5) {
-                startBtn.setAttribute('data-translate-key', 'levelSelect');
-                startBtn.textContent = translations[currentLanguage].levelSelect;
-                startBtn.onclick = showLevelSelect;
-            } else if (nextLevel > 1 && nextLevel <= levels.length) {
-                startBtn.removeAttribute('data-translate-key');
-                startBtn.textContent = `${translations[currentLanguage].continue} (${translations[currentLanguage].level} ${nextLevel})`;
-                startBtn.onclick = () => startGame(nextLevel);
-            } else {
-                startBtn.setAttribute('data-translate-key', 'newGame');
-                startBtn.textContent = translations[currentLanguage].newGame;
-                startBtn.onclick = () => startGame(1);
-            }
-        }
+/* ---------- Grid ---------- */
+function labelCells() {
+  const n = gameState.gridSize;
+  gameState.cells.forEach((cell, i) =>
+    cell.setAttribute('aria-label', T().cell.replace('{r}', ((i / n) | 0) + 1).replace('{c}', (i % n) + 1)));
+}
+function setOn(cell, on) { cell.classList.toggle('on', on); cell.setAttribute('aria-pressed', String(on)); }
+function createGrid(size) {
+  gridContainer.innerHTML = ''; gameState.cells = []; gameState.gridSize = size;
+  gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement('button');
+    cell.type = 'button'; cell.className = 'cell';
+    cell.addEventListener('click', () => handleCellClick(i));
+    gridContainer.appendChild(cell); gameState.cells.push(cell);
+  }
+  labelCells();
+}
+const curLevel = () => gameState.random || levels[gameState.currentLevel - 1];
+function applyLevel(data) {
+  if (gameState.gridSize !== data.size || !gameState.cells.length) createGrid(data.size);
+  gameState.moves = 0; gameState.locked = false;
+  clearTimeout(hintTimer);
+  gameState.cells.forEach((cell, i) => { cell.classList.remove('hint'); setOn(cell, data.pattern[i] === '1'); });
+  updateUI();
+}
+function loadLevel(n) { gameState.random = null; gameState.currentLevel = n; applyLevel(levels[n - 1]); }
+function resetLevel() { applyLevel(curLevel()); }
+function startGame(n) {
+  if (n === 1 && !gameState.progress.tutorialCompleted) { runTutorial(); }
+  else { loadLevel(n); showScreen('game-screen'); }
+}
+function startRandom(n) {
+  const N = n * n;
+  let on, sol;
+  do {
+    on = Array(N).fill(true);
+    const k = (n === 4 ? 4 : 6) + Math.floor(Math.random() * (n === 4 ? 5 : 7));
+    for (let j = 0; j < k; j++) nb(n, Math.floor(Math.random() * N)).forEach(i => on[i] = !on[i]);
+    sol = solve(n, on);
+  } while (!sol || sol.length < 3);
+  gameState.random = { par: sol.length, size: n, pattern: on.map(b => b ? '1' : '0').join('') };
+  applyLevel(gameState.random);
+  showScreen('game-screen');
+}
 
-        function saveProgress() { localStorage.setItem('lightsOnProgress', JSON.stringify(gameState.progress)); }
-        function loadProgress() {
-            
-            const saved = localStorage.getItem('lightsOnProgress');
-            if(saved) gameState.progress = JSON.parse(saved);
-        }
+function handleCellClick(index) {
+  if (gameState.locked) return;
+  gameState.moves++;
+  nb(gameState.gridSize, index).forEach(i => setOn(gameState.cells[i], !gameState.cells[i].classList.contains('on')));
+  tone(gameState.cells[index].classList.contains('on') ? 620 : 420, 0.08);
+  updateUI();
+  if (gameState.cells.every(c => c.classList.contains('on'))) handleWin();
+}
+function showHint() {
+  if (gameState.locked) return;
+  const sol = solve(gameState.gridSize, gameState.cells.map(c => c.classList.contains('on')));
+  if (!sol || !sol.length) return;
+  clearTimeout(hintTimer);
+  gameState.cells.forEach(c => c.classList.remove('hint'));
+  const cell = gameState.cells[sol[0]];
+  void cell.offsetWidth; cell.classList.add('hint'); tone(880, 0.1);
+  hintTimer = setTimeout(() => cell.classList.remove('hint'), 2600);
+}
 
-        function runTutorial() {
-            loadLevel(1);
-            showScreen('game-screen');
-            screens['tutorial-overlay'].classList.remove('hidden');
+/* ---------- Win ---------- */
+function handleWin() {
+  gameState.locked = true;
+  triggerVibration([100, 50, 300, 50, 300, 150, 100, 50, 100, 150, 300, 50, 100]);
+  [523, 659, 784, 1047].forEach((f, k) => tone(f, 0.25, k * 0.12));
+  const L = curLevel(), t = T(), rnd = !!gameState.random, lvl = gameState.currentLevel;
+  if (!rnd) {
+    const p = gameState.progress;
+    p.highestLevelBeaten = Math.max(p.highestLevelBeaten, lvl);
+    if (!p.pbs[lvl] || gameState.moves < p.pbs[lvl]) p.pbs[lvl] = gameState.moves;
+    saveProgress();
+  }
+  $('win-par').textContent = `${t.moves}: ${gameState.moves} (${t.par}: ${L.par})`;
+  const title = $('win-title'), msg = $('win-message'), next = $('win-next-btn');
+  msg.textContent = gameState.moves <= L.par ? t.excellentSolve : t.goodJob;
+  const toSelect = () => showLevelSelect();
+  if (rnd) {
+    title.textContent = t.puzzleSolved; next.textContent = t.newPuzzle; next.onclick = () => startRandom(L.size);
+  } else if (lvl === 5 && gameState.progress.highestLevelBeaten === 5) {
+    title.textContent = t.campaignComplete; msg.innerHTML = t.unlocked;
+    next.textContent = t.goToLevelSelect; next.onclick = toSelect;
+  } else if (lvl === levels.length) {
+    title.textContent = t.allLevelsComplete; msg.textContent = t.allLevelsBeaten;
+    next.textContent = t.goToLevelSelect; next.onclick = toSelect;
+  } else {
+    title.textContent = t.levelNComplete.replace('{n}', lvl);
+    next.textContent = t.nextLevel; next.onclick = () => startGame(lvl + 1);
+  }
+  $('win-replay-btn').onclick = () => { resetLevel(); showScreen('game-screen'); };
+  // Let the player see the fully lit board before the modal appears
+  winTimer = setTimeout(() => screens['win-modal'].classList.remove('hidden'), 600);
+}
 
-            const highlightBox = document.getElementById('tutorial-highlight');
-            const textBox = document.getElementById('tutorial-text-box');
-            const textEl = document.getElementById('tutorial-text');
-            const okBtn = document.getElementById('tutorial-ok-btn');
+/* ---------- Menus ---------- */
+function showLevelSelect() {
+  const normCont = $('levels-grid-container-normal'), xtraCont = $('levels-grid-container-extra');
+  [normCont, xtraCont].forEach(c => c.innerHTML = '');
+  levels.forEach((levelData, idx) => {
+    const i = idx + 1, isUnlocked = i <= gameState.progress.highestLevelBeaten + 1;
+    const pb = gameState.progress.pbs[i], btn = document.createElement('button');
+    btn.innerHTML = `<span class="level-num">${i}</span><span class="level-pb">${pb ? `${T().best}: ${pb}` : '---'}</span>`;
+    btn.className = 'button level-button';
+    if (!isUnlocked) { btn.classList.add('locked'); btn.disabled = true; }
+    if (levelData.size === 5) btn.classList.add('extra');
+    if (pb && pb <= levelData.par) btn.classList.add('perfect');
+    if (isUnlocked) btn.onclick = () => startGame(i);
+    (levelData.size === 4 ? normCont : xtraCont).appendChild(btn);
+  });
+  [[4, 5], [5, 10]].forEach(([n, need]) => {
+    const b = $(`random-${n}-btn`), ok = gameState.progress.highestLevelBeaten >= need;
+    b.disabled = !ok;
+    b.innerHTML = `<span>${T()['random' + n]}</span>` + (ok ? '' : `<small>${T()['lock' + n]}</small>`);
+    b.onclick = ok ? () => startRandom(n) : null;
+  });
+  showScreen('level-select-screen');
+}
+function updateUI() {
+  const L = curLevel(); if (!L) return;
+  levelDisplay.textContent = gameState.random ? T()['random' + gameState.random.size] : `${T().level} ${gameState.currentLevel}`;
+  movesDisplay.textContent = `${T().moves}: ${gameState.moves} / ${T().par}: ${L.par}`;
+}
+function goToStartScreen() { updateStartScreen(); showScreen('start-screen'); }
+function updateStartScreen() {
+  const btn = $('start-game-btn'), next = gameState.progress.highestLevelBeaten + 1;
+  if (gameState.progress.highestLevelBeaten >= 5) {
+    btn.setAttribute('data-translate-key', 'levelSelect'); btn.textContent = T().levelSelect; btn.onclick = showLevelSelect;
+  } else if (next > 1 && next <= levels.length) {
+    btn.removeAttribute('data-translate-key');
+    btn.textContent = `${T().continue} (${T().level} ${next})`; btn.onclick = () => startGame(next);
+  } else {
+    btn.setAttribute('data-translate-key', 'newGame'); btn.textContent = T().newGame; btn.onclick = () => startGame(1);
+  }
+}
 
-            let step = 0;
-            const steps = [
-                { el: gameState.cells[5], textKey: 'tutorial_step1' },
-                { el: movesDisplay, textKey: 'tutorial_step2' },
-                { el: document.getElementById('controls'), textKey: 'tutorial_step3' }
-            ];
+/* ---------- Progress ---------- */
+function saveProgress() { store.set('lightsOnProgress', JSON.stringify(gameState.progress)); }
+function loadProgress() {
+  try {
+    const saved = JSON.parse(store.get('lightsOnProgress'));
+    if (saved && typeof saved === 'object') gameState.progress = { ...defaultProgress(), ...saved, pbs: { ...(saved.pbs || {}) } };
+  } catch (e) { gameState.progress = defaultProgress(); }
+}
 
-            function showStep() {
-                if (step === 0) {
-                    highlightBox.classList.add('spotlight-bright');
-                } else {
-                    highlightBox.classList.remove('spotlight-bright');
-                }
-                const currentStep = steps[step];
-                const targetRect = currentStep.el.getBoundingClientRect();
-                
-                highlightBox.style.width = `${targetRect.width + 10}px`;
-                highlightBox.style.height = `${targetRect.height + 10}px`;
-                highlightBox.style.top = `${targetRect.top - 5}px`;
-                highlightBox.style.left = `${targetRect.left - 5}px`;
-                
-                textEl.innerHTML = translations[currentLanguage][currentStep.textKey];
-                okBtn.textContent = translations[currentLanguage].ok;
+/* ---------- Tutorial ---------- */
+function runTutorial() {
+  loadLevel(1);
+  showScreen('game-screen');
+  const ov = screens['tutorial-overlay'], hl = $('tutorial-highlight'), tb = $('tutorial-text-box');
+  const txt = $('tutorial-text'), ok = $('tutorial-ok-btn');
+  const steps = [
+    { el: () => gameState.cells[5], key: 'tutorial_step1' },
+    { el: () => movesDisplay, key: 'tutorial_step2' },
+    { el: () => $('controls'), key: 'tutorial_step3' }
+  ];
+  let step = 0, timer = null, rect = null;
 
-                if (window.innerHeight - targetRect.bottom > 150) {
-                    textBox.style.top = `${targetRect.bottom + 15}px`;
-                    textBox.style.bottom = 'auto';
-                } else {
-                    textBox.style.bottom = `${window.innerHeight - targetRect.top + 15}px`;
-                    textBox.style.top = 'auto';
-                }
+  // Position the spotlight. `instant` skips the CSS transition, so the first step never
+  // animates in from an empty/full-screen box (this was the flash).
+  function place(instant) {
+    if (instant) hl.style.transition = 'none';
+    hl.classList.toggle('spotlight-bright', step === 0);
+    rect = steps[step].el().getBoundingClientRect();
+    Object.assign(hl.style, { width: `${rect.width + 10}px`, height: `${rect.height + 10}px`, top: `${rect.top - 5}px`, left: `${rect.left - 5}px` });
+    txt.innerHTML = T()[steps[step].key];
+    if (window.innerHeight - rect.bottom > 150) { tb.style.top = `${rect.bottom + 15}px`; tb.style.bottom = 'auto'; }
+    else { tb.style.bottom = `${window.innerHeight - rect.top + 15}px`; tb.style.top = 'auto'; }
+    if (instant) { void hl.offsetWidth; hl.style.transition = ''; }
+  }
+  function enable() {
+    clearInterval(timer); ok.disabled = false; ok.classList.remove('timed-button'); ok.textContent = T().ok;
+  }
+  function show(instant) {
+    place(instant); clearInterval(timer);
+    let n = Math.ceil(TUTORIAL_DELAY / 1000);
+    ok.disabled = true; ok.classList.add('timed-button'); ok.textContent = `${T().ok} (${n})`;
+    timer = setInterval(() => { if (--n > 0) ok.textContent = `${T().ok} (${n})`; else enable(); }, 1000);
+  }
+  // Overlay blocks everything except a tap on the spotlighted tile during step 1
+  ov.onclick = e => {
+    if (e.target !== ov || step !== 0) return;
+    const r = steps[0].el().getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) { handleCellClick(5); enable(); }
+  };
+  ok.onclick = () => {
+    if (++step < steps.length) { show(false); return; }
+    clearInterval(timer); tutorialRefresh = null;
+    ov.classList.add('hidden');
+    gameState.progress.tutorialCompleted = true; saveProgress();
+    resetLevel();
+  };
+  tutorialRefresh = () => place(true);
+  show(true);                      // place first, then reveal: no flash
+  ov.classList.remove('hidden');
+}
+addEventListener('resize', () => { if (tutorialRefresh) tutorialRefresh(); });
 
-                // --- SNIPPET TO ADD ---
-                okBtn.disabled = true;
-                okBtn.classList.add('timed-button');
+/* ---------- Init ---------- */
+function main() {
+  loadProgress();
+  createGrid(4);
+  $('reset-btn').onclick = resetLevel;
+  $('hint-btn').onclick = showHint;
+  $('game-menu-btn').onclick = () => (gameState.progress.highestLevelBeaten >= 5 ? showLevelSelect() : goToStartScreen());
+  $('reset-progress-btn').onclick = () => {
+    if (!confirm(T().resetConfirm)) return;
+    store.del('lightsOnProgress');
+    gameState.progress = defaultProgress();
+    setLanguage(currentLanguage);
+  };
+  const skip = $('skip-level-btn');
+  if (devmode === 0) skip.remove();
+  else skip.onclick = () => { gameState.moves = curLevel().par; handleWin(); };
+  $('level-select-main-menu-btn').onclick = goToStartScreen;
+  $('language-toggle-btn').onclick = () => setLanguage(currentLanguage === 'en' ? 'ar' : 'en');
+  setLanguage(currentLanguage);
+  showScreen('start-screen');
+}
+main();
 
-                let countdown = Math.ceil(TUTORIAL_DELAY / 1000); // Calculate seconds from milliseconds
-                okBtn.textContent = `${translations[currentLanguage].ok} (${countdown})`;
-
-                const intervalId = setInterval(() => {
-                    countdown--;
-                    if (countdown > 0) {
-                        okBtn.textContent = `${translations[currentLanguage].ok} (${countdown})`;
-                    } else {
-                        // When timer finishes
-                        clearInterval(intervalId); // Stop the interval
-                        okBtn.disabled = false;
-                        okBtn.classList.remove('timed-button');
-                        okBtn.textContent = translations[currentLanguage].ok;
-                    }
-                }, 1000); // Run this every second
-                // --- END OF SNIPPET ---
-            }
-            
-            okBtn.onclick = () => {
-                step++;
-                if (step < steps.length) {
-                    showStep();
-                } else {
-                    screens['tutorial-overlay'].classList.add('hidden');
-                    gameState.progress.tutorialCompleted = true;
-                    saveProgress();
-                }
-            };
-            
-            // BUG FIX: Delay the first step to allow the browser to render the game screen
-            setTimeout(showStep, 50);
-        }
-        
-        function main() {
-            loadProgress();
-            createGrid(4);
-            
-            document.getElementById('reset-progress-btn').onclick = () => {
-                if (confirm(translations[currentLanguage].resetConfirm)) {
-                    // Reset progress but keep language
-                    const lang = localStorage.getItem('lightsOnLanguage') || 'ar';
-                    localStorage.removeItem('lightsOnProgress');
-                    gameState.progress = { highestLevelBeaten: 0, pbs: {}, tutorialCompleted: false };
-                    updateStartScreen();
-                    setLanguage(lang); // Re-apply language after reset
-                }
-            };
-            
-            const skipButton = document.getElementById('skip-level-btn');
-            if (devmode === 0) {
-              skipButton.remove();
-            } else {
-                skipButton.onclick = () => {
-                gameState.moves = levels[gameState.currentLevel - 1].par;
-                handleWin();
-                };
-            }
-            
-            document.getElementById('level-select-main-menu-btn').onclick = goToStartScreen;
-            document.getElementById('language-toggle-btn').onclick = () => {
-                const newLang = currentLanguage === 'en' ? 'ar' : 'en';
-                setLanguage(newLang);
-            };
-
-            document.body.addEventListener('click', () => {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }, { once: true });
-            
-            setLanguage(currentLanguage);
-            showScreen('start-screen');
-        }
-
-        main();
-    </script>
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
 </body>
 </html>
